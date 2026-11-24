@@ -1,32 +1,32 @@
 # Paint_Application
 
 ## 1. Bigger Brush Range
-So, what I did here was adjust the brush size slider to allow a wider range of brush sizes. I made it possible to choose from size 1 up to 100, so the user can draw either thin or thick strokes depending on what they need. This gives more flexibility and control when drawing.
+So, what I did here was adjust the brush size slider. Before, the brush size had a more limited range, so I changed it to go from 1 to 100. This way, the user can choose whether they want a thin line or a much thicker brush, depending on what they're drawing.
 ![Paint Application UI](Bigger_Brush.png)
 
 
 ## 2. Undo Button
-For the Undo button, I added a function that allows the user to reverse their most recent drawing action. It can undo either a freehand stroke or a shape, making it easier to correct mistakes without removing the entire drawing.
+For the Undo button, I added a function that removes the last thing the user drew. So, if they accidentally draw something or make a shape they don't like, they can just click Undo instead of starting all over again.
 ![Paint Application UI](Undo_Button.png)
 
 ## 3. Filled Shapes
-I added a Fill Shapes option that allows rectangles and ovals to be filled with the currently selected color. When the option is enabled, the shapes have a solid interior instead of just an outline.
+For this part, I added a Fill Shapes option. When it's checked, rectangles and ovals will have color inside instead of just being outlines. It also uses the color that the user currently selected.
 ![Paint Application UI](Filled_Shapes.png)
 
 ## 4. Extra Shape Tool (Triangle)
-So, what I did for this part was add a Triangle tool alongside the Line, Rectangle, and Oval tools. The user can draw a triangle by dragging on the canvas, and a preview appears while dragging to show the shape before finishing it. The triangle is also included when saving the image.
+I also added a Triangle tool, which is another shape option aside from Line, Rectangle, and Oval. The user can drag on the canvas to make a triangle, and there's a preview while they're drawing so they can see how it looks before finishing.
 ![Paint Application UI](Extra_Shape_Tool.png)
 
 ## 5. Confirm Before Clearing
-For the Clear button, I added a confirmation dialog with Yes and No options. This gives the user a chance to confirm before removing their drawing. Choosing Yes clears the canvas, while choosing No cancels the action.
+I made the Clear button ask for confirmation first before removing everything on the canvas. It gives the user Yes and No options, so they can decide whether to clear their drawing or keep it if they clicked the button by accident.
 ![Paint Application UI](Clear_Button.png)
 
 ## 6. Quick Colors (Six One-Click Colors)
-I also added six quick-color buttons: black, red, blue, green, yellow, and purple. Each button immediately changes the drawing color when clicked, making it quicker to select a color without opening the color picker.
+I added six quick colors: black, red, blue, green, yellow, and purple. Instead of opening the color picker every time, the user can just click the color they want, and it will automatically become the drawing color.
 ![Paint Application UI](Quick_Color.png)
 
 ## 7. Screenshot of the Whole UI Design
-Below is the screenshot of my Paint Application's complete interface, showing the drawing canvas, toolbar, drawing tools, brush size slider, and quick color buttons.
+Here is the screenshot of my Paint Application showing the whole interface, including the canvas, toolbar, drawing tools, brush size slider, and quick colors.
 ![Paint Application UI](UI_Design.png)
 
 
