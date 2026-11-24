@@ -2,7 +2,7 @@
 
 ## 1. Bigger Brush Range
 So, what I did here was adjust the brush size slider to allow a wider range of brush sizes. I made it possible to choose from size 1 up to 100, so the user can draw either thin or thick strokes depending on what they need. This gives more flexibility and control when drawing.
-![Paint Application UI](Big_Brush.png)
+![Paint Application UI](Bigger_Brush.png)
 
 
 ## 2. Undo Button
