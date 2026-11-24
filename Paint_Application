@@ -1,0 +1,500 @@
+import tkinter as tk
+from tkinter import colorchooser, filedialog, messagebox
+from PIL import Image, ImageDraw, ImageTk
+
+PANEL = "#FFD7BA"
+BTN = "#FFBE98"
+HOVER = "#FFA877"
+TEXT = "#5C3D2E"
+FONT = ("Arial", 10, "bold")
+
+CANVAS_WIDTH, CANVAS_HEIGHT = 900, 550
+
+root = tk.Tk()
+root.title("My Paint Application")
+root.geometry("1080x760")
+root.configure(bg=BG)
+root.resizable(False, False)
+
+
+frame = tk.Frame(root, bg=BTN, padx=4, pady=4)
+frame.pack(padx=20, pady=12)
+
+canvas = tk.Canvas(
+    frame,
+    width=CANVAS_WIDTH,
+    height=CANVAS_HEIGHT,
+    bg="white",
+    cursor="cross",
+    highlightthickness=0
+)
+canvas.pack()
+
+image = Image.new("RGB", (CANVAS_WIDTH, CANVAS_HEIGHT), "white")
+draw = ImageDraw.Draw(image)
+canvas_photo = None
+
+current_color = "black"
+brush_size = 5
+tool = "brush"
+fill_shapes = False
+
+start_x = start_y = last_x = last_y = None
+preview_id = None
+undo_stack = []
+
+def save_undo_state():
+    undo_stack.append(image.copy())
+    if len(undo_stack) > 30:
+        undo_stack.pop(0)
+
+
+def refresh_canvas():
+    global canvas_photo
+    canvas.delete("all")
+    canvas_photo = ImageTk.PhotoImage(image)
+    canvas.create_image(0, 0, anchor="nw", image=canvas_photo)
+
+def choose_color():
+    global current_color, tool
+
+    picked = colorchooser.askcolor(
+        title="Choose a color",
+        initialcolor=current_color
+    )
+
+    if picked and picked[1]:
+        current_color = picked[1]
+        tool = "brush"
+        color_button.config(bg=current_color)
+
+
+def set_color(color):
+    global current_color, tool
+
+    current_color = color
+    tool = "brush"
+    color_button.config(bg=color)
+
+
+def set_tool(new_tool):
+    global tool
+    tool = new_tool
+
+
+def set_fill():
+    global fill_shapes
+    fill_shapes = fill_var.get()
+
+
+def change_size(value):
+    global brush_size
+    brush_size = int(float(value))
+
+
+def start_drawing(event):
+    global start_x, start_y, last_x, last_y, preview_id
+
+    start_x = last_x = event.x
+    start_y = last_y = event.y
+    preview_id = None
+
+    if tool in ("brush", "eraser"):
+        save_undo_state()
+
+        color = "white" if tool == "eraser" else current_color
+
+        draw.line(
+            (event.x, event.y, event.x, event.y),
+            fill=color,
+            width=brush_size
+        )
+
+        refresh_canvas()
+    else:
+        save_undo_state()
+
+
+def triangle_points(x1, y1, x2, y2):
+    left = min(x1, x2)
+    right = max(x1, x2)
+    top = min(y1, y2)
+    bottom = max(y1, y2)
+
+    mid = (left + right) // 2
+
+    return [
+        (mid, top),
+        (right, bottom),
+        (left, bottom)
+    ]
+
+def preview_shape(event):
+    global preview_id
+
+    if preview_id is not None:
+        canvas.delete(preview_id)
+
+    if tool == "line":
+        preview_id = canvas.create_line(
+            start_x, start_y,
+            event.x, event.y,
+            fill=current_color,
+            width=brush_size
+        )
+
+    elif tool == "rectangle":
+        preview_id = canvas.create_rectangle(
+            start_x, start_y,
+            event.x, event.y,
+            outline=current_color,
+            width=brush_size,
+            fill=current_color if fill_shapes else ""
+        )
+
+    elif tool == "oval":
+        preview_id = canvas.create_oval(
+            start_x, start_y,
+            event.x, event.y,
+            outline=current_color,
+            width=brush_size,
+            fill=current_color if fill_shapes else ""
+        )
+
+    elif tool == "triangle":
+        pts = triangle_points(
+            start_x, start_y,
+            event.x, event.y
+        )
+
+        preview_id = canvas.create_polygon(
+            pts,
+            outline=current_color,
+            width=brush_size,
+            fill=current_color if fill_shapes else "",
+            joinstyle="round"
+        )
+
+def draw_motion(event):
+    global last_x, last_y
+
+    if tool in ("brush", "eraser"):
+        color = "white" if tool == "eraser" else current_color
+
+        draw.line(
+            (last_x, last_y, event.x, event.y),
+            fill=color,
+            width=brush_size
+        )
+
+        last_x, last_y = event.x, event.y
+        refresh_canvas()
+
+    else:
+        preview_shape(event)
+
+
+def finish_drawing(event):
+    global preview_id
+
+    if tool == "line":
+        draw.line(
+            (start_x, start_y, event.x, event.y),
+            fill=current_color,
+            width=brush_size
+        )
+
+    elif tool == "rectangle":
+        draw.rectangle(
+            (start_x, start_y, event.x, event.y),
+            outline=current_color,
+            width=brush_size,
+            fill=current_color if fill_shapes else None
+        )
+
+    elif tool == "oval":
+        draw.ellipse(
+            (start_x, start_y, event.x, event.y),
+            outline=current_color,
+            width=brush_size,
+            fill=current_color if fill_shapes else None
+        )
+
+    elif tool == "triangle":
+        draw.polygon(
+            triangle_points(
+                start_x, start_y,
+                event.x, event.y
+            ),
+            outline=current_color,
+            fill=current_color if fill_shapes else None
+        )
+
+    if tool in ("line", "rectangle", "oval", "triangle"):
+        preview_id = None
+        refresh_canvas()
+
+
+    global image, draw
+
+    if undo_stack:
+        image = undo_stack.pop()
+        draw = ImageDraw.Draw(image)
+        refresh_canvas()
+    else:
+        messagebox.showinfo("Undo", "Nothing to undo.")
+
+
+def clear_canvas():
+    global image, draw, preview_id
+
+    answer = messagebox.askyesno(
+        "Clear Canvas",
+        "Are you sure you want to clear your drawing?"
+    )
+
+    if answer:
+        save_undo_state()
+
+        image = Image.new(
+            "RGB",
+            (CANVAS_WIDTH, CANVAS_HEIGHT),
+            "white"
+        )
+
+        draw = ImageDraw.Draw(image)
+        preview_id = None
+        refresh_canvas()
+
+def open_image():
+    global image, draw
+
+    path = filedialog.askopenfilename(
+        filetypes=[
+            ("Image files", "*.png *.jpg *.jpeg *.bmp *.gif")
+        ]
+    )
+
+    if path:
+        try:
+            save_undo_state()
+
+            opened = Image.open(path).convert("RGB")
+
+            opened = opened.resize(
+                (CANVAS_WIDTH, CANVAS_HEIGHT),
+                Image.Resampling.LANCZOS
+            )
+
+            image = opened
+            draw = ImageDraw.Draw(image)
+            refresh_canvas()
+
+        except Exception as err:
+            messagebox.showerror(
+                "Error",
+                f"Could not open image:\n{err}"
+            )
+
+def save_image():
+    path = filedialog.asksaveasfilename(
+        defaultextension=".png",
+        filetypes=[
+            ("PNG Image", "*.png"),
+            ("JPEG Image", "*.jpg"),
+            ("Bitmap Image", "*.bmp")
+        ]
+    )
+
+    if path:
+        try:
+            image.save(path)
+
+            messagebox.showinfo(
+                "Saved",
+                "Your drawing has been saved!"
+            )
+
+        except Exception as err:
+            messagebox.showerror(
+                "Error",
+                f"Could not save image:\n{err}"
+            )
+
+
+def make_button(parent, label, command):
+    return tk.Button(
+        parent,
+        text=label,
+        command=command,
+        bg=BTN,
+        fg=TEXT,
+        activebackground=HOVER,
+        activeforeground=TEXT,
+        font=FONT,
+        relief="flat",
+        padx=9,
+        pady=5,
+        cursor="hand2"
+    )
+
+
+toolbar = tk.Frame(root, bg=PANEL, padx=8, pady=8)
+toolbar.pack(padx=12, pady=5)
+
+color_button = make_button(
+    toolbar,
+    "Choose Color",
+    choose_color
+)
+color_button.pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Brush",
+    lambda: set_tool("brush")
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Eraser",
+    lambda: set_tool("eraser")
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Line",
+    lambda: set_tool("line")
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Rectangle",
+    lambda: set_tool("rectangle")
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Oval",
+    lambda: set_tool("oval")
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Triangle",
+    lambda: set_tool("triangle")
+).pack(side="left", padx=3)
+
+
+fill_var = tk.BooleanVar(value=False)
+
+tk.Checkbutton(
+    toolbar,
+    text="Fill Shapes",
+    variable=fill_var,
+    command=set_fill,
+    bg=PANEL,
+    fg=TEXT,
+    font=FONT,
+    activebackground=PANEL
+).pack(side="left", padx=4)
+
+
+tk.Label(
+    toolbar,
+    text="Size:",
+    bg=PANEL,
+    fg=TEXT,
+    font=FONT
+).pack(side="left", padx=(6, 2))
+
+size_slider = tk.Scale(
+    toolbar,
+    from_=1,
+    to=100,
+    orient="horizontal",
+    command=change_size,
+    length=125,
+    bg=PANEL,
+    fg=TEXT,
+    troughcolor=BTN,
+    highlightthickness=0
+)
+
+size_slider.set(5)
+size_slider.pack(side="left", padx=3)
+
+
+
+make_button(
+    toolbar,
+    "Undo",
+    undo
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Clear",
+    clear_canvas
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Open",
+    open_image
+).pack(side="left", padx=3)
+
+make_button(
+    toolbar,
+    "Save",
+    save_image
+).pack(side="left", padx=3)
+
+
+quick_frame = tk.Frame(root, bg=BG)
+quick_frame.pack(pady=(2, 8))
+
+tk.Label(
+    quick_frame,
+    text="Quick Colors:",
+    bg=BG,
+    fg=TEXT,
+    font=FONT
+).pack(side="left", padx=6)
+
+quick_colors = [
+    ("Black", "#000000"),
+    ("Red", "#FF0000"),
+    ("Blue", "#0000FF"),
+    ("Green", "#008000"),
+    ("Yellow", "#FFFF00"),
+    ("Purple", "#800080")
+]
+
+for name, hex_color in quick_colors:
+
+    b = tk.Button(
+        quick_frame,
+        text=name,
+        command=lambda c=hex_color: set_color(c),
+        bg=hex_color,
+        fg="white" if name in (
+            "Black", "Blue", "Green", "Purple"
+        ) else TEXT,
+        activebackground=hex_color,
+        relief="flat",
+        padx=10,
+        pady=4,
+        cursor="hand2"
+    )
+
+    b.pack(side="left", padx=3)
+
+
+canvas.bind("<Button-1>", start_drawing)
+canvas.bind("<B1-Motion>", draw_motion)
+canvas.bind("<ButtonRelease-1>", finish_drawing)
+
+
+refresh_canvas()
+root.mainloop()
